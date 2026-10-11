@@ -1,9 +1,10 @@
 # Installation
 
-Start here for a first-time setup. The project supports two installation methods:
+Start here for a first-time setup. The project supports three installation methods:
 
 - Docker Compose on your own Linux host or VM
 - the Home Assistant add-on from this repository
+- the NixOS module provided by this repository's flake
 
 After the stack is running, continue with [Onboarding](onboarding.md) to pair a vacuum.
 
@@ -143,6 +144,94 @@ If your model already has certificate notes on the tested-vacuums page, follow t
 
 Use [Home Assistant](home_assistant.md) as the installation guide if you want to run the stack as a Home Assistant add-on instead of Docker Compose.
 
+## Method 3: NixOS
+
+The flake exports a NixOS module (`nixosModules.default`) that runs the stack as a hardened systemd service. It builds the package with its own `mosquitto`, `openssl` and `acme.sh`, so nothing else needs installing.
+
+### Additional Requirements
+
+- NixOS with flakes enabled
+- A way to deliver secrets as files outside the Nix store (for example agenix or sops-nix). Secret options take file paths, never the secret values.
+
+### Steps
+
+1. Add the flake as an input and import the module:
+
+   ```nix
+   {
+     inputs.roborock-local-server.url = "github:mjallen18/nixos_local_roborock_server";
+
+     outputs = { nixpkgs, roborock-local-server, ... }: {
+       nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+         modules = [
+           roborock-local-server.nixosModules.default
+           ./roborock.nix
+         ];
+       };
+     };
+   }
+   ```
+
+2. Generate the two hashes. You can run the CLI without installing it:
+
+   ```bash
+   nix run github:mjallen18/nixos_local_roborock_server -- hash-password            # admin password
+   nix run github:mjallen18/nixos_local_roborock_server -- hash-password --password 123456   # 6-digit login PIN
+   ```
+
+   Save each hash to its own secret file, along with your Cloudflare API token if you use Cloudflare DNS-01. See [Credential Names](#credential-names) for what each credential is for.
+
+3. Configure the service (`roborock.nix`):
+
+   ```nix
+   {
+     services.roborock-local-server = {
+       enable = true;
+       openFirewall = true;
+
+       # Serves api-roborock.<baseDomain> unless you set stackFqdn.
+       baseDomain = "example.com";
+       acmeEmail = "you@example.com";
+       cloudflareTokenFile = "/run/secrets/cloudflare_token";
+
+       adminPasswordHashFile = "/run/secrets/roborock_admin_hash";
+       protocolLoginEmail = "you@example.com";
+       protocolLoginPinHashFile = "/run/secrets/roborock_pin_hash";
+     };
+   }
+   ```
+
+4. Rebuild and check the service:
+
+   ```bash
+   sudo nixos-rebuild switch
+   systemctl status roborock-local-server
+   journalctl -fu roborock-local-server
+   ```
+
+   The first start issues the certificate, which can take a few minutes. State lives in `/var/lib/roborock-local-server`.
+
+### Options
+
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `port` / `mqttPort` | `555` / `8881` | HTTPS and MQTT TLS listener ports. |
+| `listenAddress` | `0.0.0.0` | Bind address. |
+| `stackFqdn` | `api-roborock.<baseDomain>` | The one hostname the stack serves. |
+| `region` | `us` | `us`, `eu`, `cn` or `ru`. |
+| `openFirewall` | `false` | Open `port` and `mqttPort` in the firewall. |
+| `acmeServer` | `zerossl` | `zerossl`, `letsencrypt` or `actalis`. |
+| `acmeEabKidFile` / `acmeEabHmacKeyFile` | `null` | External Account Binding files. Required for `actalis`. See [Tested Vacuums](tested_vacuums.md). |
+| `sessionSecretFile` | `null` | Admin session secret. If unset, one is generated once and kept in the state directory. |
+| `tls.mode` | `cloudflare_acme` | Set to `provided` with `tls.certFile` / `tls.keyFile` to use your own certificate. See [Custom certificate management](custom_cert_management.md). |
+| `listenerMode` | `local_tls` | `external_tls` when a reverse proxy terminates TLS. Needs `tls.mode = "provided"`. |
+| `advertisedPort` / `advertisedMqttPort` / `trustedProxies` | `null` | Reverse proxy settings. See [Reverse Proxy](reverse_proxy.md). |
+| `protocolAuthEnabled` / `newConnectionsEnabled` | `true` | Initial values. Changes made in the admin dashboard reset when the service restarts. |
+
+Secrets are loaded as systemd credentials, so the service runs as a dynamic user and never needs read access to the original files. The config file is generated at each start in the state directory; edit the options, not the file.
+
+To update, run `nix flake update roborock-local-server` and rebuild. See [Updating](updating.md).
+
 ## After The Stack Starts
 
 1. Open the admin dashboard at `https://api-roborock.example.com:555/admin` by default, or `https://api-roborock.example.com:YOUR_HTTPS_PORT/admin` if you chose a custom HTTPS port.
@@ -154,6 +243,8 @@ Use [Home Assistant](home_assistant.md) as the installation guide if you want to
    docker compose logs -f roborock-local-server
    nslookup api-roborock.example.com
    ```
+
+   On NixOS, use `systemctl status roborock-local-server` and `journalctl -fu roborock-local-server` instead of the `docker compose` commands.
 
 3. Import your data from the cloud so things like routines and rooms will work. Enter your Roborock cloud email under cloud import, select **Send code**, then enter the returned code and select **Fetch data**.
 

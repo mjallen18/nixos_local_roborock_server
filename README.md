@@ -42,7 +42,7 @@ Roborock Local Server provides an on-premises HTTPS and MQTT stack. By redirecti
 ## Requirements
 
 - A domain you control with local DNS rewriting (Pi-hole, AdGuard Home, or router DNS).
-- A place to run the stack on your LAN (Docker Compose or Home Assistant installation that supports add-ons).
+- A place to run the stack on your LAN (Docker Compose, a NixOS host, or Home Assistant installation that supports add-ons).
 - A valid SSL certificate for your domain (automated via Cloudflare DNS-01 or generated manually).
 - A secondary computer with Wi-Fi for initial onboarding.
 
@@ -52,7 +52,7 @@ Roborock Local Server provides an on-premises HTTPS and MQTT stack. By redirecti
 
 Start here if this is your first time setting up the stack:
 
-1. [Installation](docs/installation.md) for the shared requirements, network setup, and Docker Compose install path.
+1. [Installation](docs/installation.md) for the shared requirements, network setup, and the Docker Compose and NixOS install paths.
 2. [Home Assistant](docs/home_assistant.md) if you want to install the stack as a Home Assistant add-on instead of Docker Compose.
 3. [Cloudflare setup](docs/cloudflare_setup.md) if you want Cloudflare DNS-01 auto-renew for certificates.
 4. [Onboarding](docs/onboarding.md) to pair a vacuum from a second machine after the server is running.

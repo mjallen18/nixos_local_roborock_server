@@ -7,6 +7,7 @@ Use this page as the main docs hub for setup, onboarding, and follow-up guides.
 1. Read [Installation](installation.md) for the shared requirements and network setup.
 2. Choose an install method:
    - finish the Docker Compose steps in [Installation](installation.md)
+   - or use the NixOS module, also in [Installation](installation.md#method-3-nixos)
    - or use [Home Assistant](home_assistant.md) to install the stack as a Home Assistant add-on
 3. Use [Cloudflare setup](cloudflare_setup.md) if you want Cloudflare DNS-01 auto-renew for certificates.
 4. Run [Onboarding](onboarding.md) from a second machine after the server is running.

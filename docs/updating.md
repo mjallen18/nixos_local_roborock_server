@@ -8,6 +8,8 @@ Use this page when moving an existing install to a newer stable release.
 
    For Docker Compose installs, this usually means `config.toml`, `secrets/`, and `data/`.
 
+   For NixOS installs, back up `/var/lib/roborock-local-server` and keep your secret files. The service config is generated from your NixOS options at each start.
+
    For the Home Assistant add-on, take a Home Assistant backup or copy the add-on config and any certificate files you mounted through `/all_addon_configs/...`.
 
 2. Check the release notes or changelog for the version you are installing.
