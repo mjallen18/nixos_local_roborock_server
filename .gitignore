@@ -11,3 +11,4 @@ secrets/
 config.toml
 mitm_logs
 .tmp*
+result*
