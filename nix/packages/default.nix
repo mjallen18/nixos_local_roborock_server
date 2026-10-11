@@ -25,7 +25,7 @@ let
 in
 python313Packages.buildPythonApplication {
   pname = "roborock-local-server";
-  version = "1.2.0";
+  version = "1.2.1";
   src = lib.cleanSource ../..;
 
   pyproject = true;
