@@ -21,7 +21,7 @@ def test_gui_keep_waiting_preserves_session_and_does_not_resend(monkeypatch) -> 
     monkeypatch.setattr(gui, "_wait_for_command", lambda *a, **kw: next(commands))
     monkeypatch.setattr(gui, "_wait_for_reachability", lambda *a, **kw: True)
     sends = []
-    monkeypatch.setattr(gui, "onboard_once", lambda *a: sends.append(a) or True)
+    monkeypatch.setattr(gui, "onboard_once", lambda *a, **kw: sends.append(a) or True)
     polls = []
     outcomes = iter([("timeout", {}), ("connected", {"connected": True})])
     def poll(*args, **kw):
